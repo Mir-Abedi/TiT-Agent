@@ -15,4 +15,4 @@ def get_telegram_app():
     def handle_notification(client, message):
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     logger.info("Starting App...")
-    app.start()
+    return app
