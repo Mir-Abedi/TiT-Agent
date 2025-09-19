@@ -1,0 +1,4 @@
+Django
+gunicorn
+pyrogram
+sentence_transformers
