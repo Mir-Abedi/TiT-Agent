@@ -5,4 +5,4 @@ class Command(BaseCommand):
     help = 'Starts telegram bot.'
 
     def handle(self, *args, **options):
-        get_telegram_app().start()
+        get_telegram_app().run()
