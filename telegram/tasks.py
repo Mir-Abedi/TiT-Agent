@@ -18,6 +18,7 @@ def get_telegram_app():
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     @app.on_message()
     def handle_query_message(client, message):
+        print(message.text)
         message.reply_text(get_llm_answer(message))
     print("Starting App...")
     return app
