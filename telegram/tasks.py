@@ -10,4 +10,4 @@ app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API
 
 @app.on_message(pyrogram.filters.command("start"))
 def handle_notification(client, message):
-    message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم ککم")
+    message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
