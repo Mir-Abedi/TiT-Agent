@@ -19,6 +19,6 @@ def get_telegram_app():
     @app.on_message()
     def handle_query_message(client, message):
         print(message.text)
-        message.reply_text(get_llm_answer(message))
+        message.reply_text(get_llm_answer(message.text))
     print("Starting App...")
     return app
