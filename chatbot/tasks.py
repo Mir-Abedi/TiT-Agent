@@ -54,6 +54,7 @@ def get_llm_answer(user, system="", previous_messages:list[PreviousMessage]=[]):
     }
 
     response = requests.request("POST", API_ENDPOINT, headers=headers, data=payload)
+    print(response.text)
 
     return response.json()["choices"][0]["message"]["content"]
 
