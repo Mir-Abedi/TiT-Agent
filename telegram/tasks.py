@@ -1,6 +1,7 @@
 import os
 import pyrogram
 import logging
+from chatbot.tasks import get_llm_answer
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
@@ -15,5 +16,8 @@ def get_telegram_app():
     @app.on_message(pyrogram.filters.command("start"))
     def handle_notification(client, message):
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
+    @app.on_message()
+    def handle_query_message(client, message):
+        message.reply_text(get_llm_answer(message))
     print("Starting App...")
     return app
