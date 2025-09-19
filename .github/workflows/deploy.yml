@@ -19,28 +19,23 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          env: |
-            TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
-            TELEGRAM_BOT_TOKEN = ${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_API_ID = ${{ secrets.TELEGRAM_API_ID }}
+          envs: TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN,TELEGRAM_API_ID
           script: |
-            sudo apt update
-            sudo apt install docker-compose-plugin
             cd ${{ secrets.PROJECT_PATH }}
             echo "Pulling latest master..."
             git fetch --all
             git reset --hard origin/master
 
             echo "Stopping old containers..."
-            docker-compose down
+            docker compose down
 
             echo "Building and starting containers..."
-            docker-compose up --build -d
+            docker compose up --build -d
 
             echo "Running migrations..."
-            docker-compose exec web python manage.py migrate --noinput
+            docker compose exec web python manage.py migrate --noinput
 
             echo "Collecting static files..."
-            docker-compose exec web python manage.py collectstatic --noinput
+            docker compose exec web python manage.py collectstatic --noinput
 
             echo "Deployment completed successfully!"
