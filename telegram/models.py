@@ -1,0 +1,29 @@
+from django.db import models
+
+class TelegramMessage(models.Model):
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+class BotMessage(TelegramMessage):
+    user_message = models.OneToOneField("telegram.UserMessage", on_delete=models.CASCADE, related_name='bot_message')
+
+    def __str__(self):
+        return f"BotMessage for Bot {self.user_message_id} at {self.created_at}"
+    
+    class Meta:
+        abstract = False
+
+class UserMessage(TelegramMessage):
+    user_id = models.IntegerField()
+    chat_id = models.IntegerField()
+    bot_message: BotMessage | None
+
+    def __str__(self):
+        return f"UserMessage for User {self.user_id} at {self.created_at}"
+    
+    class Meta:
+        abstract = False
+
