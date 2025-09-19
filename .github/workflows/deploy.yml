@@ -24,6 +24,8 @@ jobs:
             TELEGRAM_BOT_TOKEN = ${{ secrets.TELEGRAM_BOT_TOKEN }}
             TELEGRAM_API_ID = ${{ secrets.TELEGRAM_API_ID }}
           script: |
+            sudo apt update
+            sudo apt install docker-compose-plugin
             cd ${{ secrets.PROJECT_PATH }}
             echo "Pulling latest master..."
             git fetch --all
