@@ -127,3 +127,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+TELEGRAM_BOT_TOKEN = "7165380042:AAHJ6mWMSjLQDKyAc2e45lhin2wUozbFBtQ"
+TELEGRAM_API_HASH = "2cd920994b50c87e2ddc0d7b26cb8e7b"
+TELEGRAM_API_ID = "13218625"
+OPENAI_API_KEY = "2fafc83c-276c-50d8-9e8e-ba5b148e85a4"
