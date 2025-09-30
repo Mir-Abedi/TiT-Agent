@@ -1,41 +1,46 @@
-# name: Deploy Django Docker App
+name: Deploy Django Docker App
 
-# on:
-#   push:
-#     branches:
-#       - master
+on:
+  push:
+    branches:
+      - master
 
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - name: Checkout code
-#         uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-#       - name: Deploy to server via SSH
-#         uses: appleboy/ssh-action@v0.1.7
-#         with:
-#           host: ${{ secrets.SERVER_IP }}
-#           username: ${{ secrets.SERVER_USER }}
-#           key: ${{ secrets.SERVER_SSH_KEY }}
-#           envs: TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN,TELEGRAM_API_ID
-#           script: |
-#             cd ${{ secrets.PROJECT_PATH }}
-#             echo "Pulling latest master..."
-#             git fetch --all
-#             git reset --hard origin/master
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN,TELEGRAM_API_ID
+          script: |
+            cd ${{ secrets.PROJECT_PATH }}
+            echo "Pulling latest master..."
+            git fetch --all
+            git reset --hard origin/master
 
-#             echo "Stopping old containers..."
-#             sudo docker compose down
+            echo "Exporting environment variables..."
+            export TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
+            export TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            export TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
 
-#             echo "Building and starting containers..."
-#             sudo docker compose up --build -d
+            echo "Stopping old containers..."
+            sudo docker compose down
 
-#             echo "Running migrations..."
-#             sudo docker compose exec web python manage.py migrate --noinput
+            echo "Building and starting containers..."
+            sudo docker compose up --build -d
 
-#             echo "Collecting static files..."
-#             sudo docker compose exec web python manage.py collectstatic --noinput
+            echo "Running migrations..."
+            sudo docker compose exec web python manage.py migrate --noinput
 
-#             echo "Deployment completed successfully!"
+            echo "Collecting static files..."
+            sudo docker compose exec web python manage.py collectstatic --noinput
+
+            echo "Deployment completed successfully!"
