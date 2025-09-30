@@ -20,4 +20,4 @@ COPY . /code/
 # RUN python manage.py collectstatic --noinput
 
 # Command to run the app
-CMD ["gunicorn", "myproject.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "tit.wsgi:application", "--bind", "0.0.0.0:8000"]
