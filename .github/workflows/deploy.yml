@@ -19,7 +19,6 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: TELEGRAM_API_HASH,TELEGRAM_BOT_TOKEN,TELEGRAM_API_ID
           script: |
             cd ${{ secrets.PROJECT_PATH }}
             echo "Pulling latest master..."
