@@ -3,7 +3,7 @@ from telegram.models import UserMessage, BotMessage, Alert
 
 class UserMessageAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'chat_id', 'text', 'timestamp')
-    fields = ('user_id', 'chat_id', 'text', 'timestamp', 'bot_message')
+    fields = ('user_id', 'chat_id', 'text', 'timestamp', 'bot_message', 'state')
     readonly_fields = fields
     search_fields = ('user_id', 'chat_id', 'text')
 

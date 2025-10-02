@@ -21,6 +21,7 @@ class UserMessage(TelegramMessage):
     user_id = models.BigIntegerField(db_index=True)
     chat_id = models.BigIntegerField(db_index=True)
     bot_message: BotMessage | None
+    state = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
         return f"UserMessage for User {self.user_id} at {self.timestamp}"

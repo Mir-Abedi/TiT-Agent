@@ -14,6 +14,7 @@ class Message(typing.TypedDict):
 API_KEY = settings.OPENAI_API_KEY
 API_ENDPOINT = settings.OPENAI_ENDPOINT
 API_MODEL = settings.API_MODEL
+API_FAST_MODEL = settings.API_FAST_MODEL
 
 def get_history_messages(user_id, chat_id, max_num_user_messages=10):
     one_hour_ago = timezone.now() - timedelta(hours=1)
@@ -57,11 +58,33 @@ def get_llm_answer(user, system="", previous_messages:list[Message]=[]):
         return "خطا در پردازش پیام"
     return ans
 
-def send_request_to_endpoint(messages: list[Message]):
+def analyze_state_of_messaging(question, answer):
+    system = """You are an expert in analyzing conversations. Analyze the conversation and ONLY return one of these options below:
+'IRRELEVANT' if the question was irrelevant.
+'ANSWERED' if the question is fully answered.
+'UNKNOWN' if the model didnt have enough data.
+
+ONLY RETURN ONE OF 'IRRELEVANT', 'ANSWERED', 'UNKNOWN' with no other text.
+"""
+    content, is_okay = send_request_to_endpoint(
+        [
+            {
+                "role": "system",
+                "content": system
+            },
+            {
+                "role": "user",
+                "content": f"Question: {question}\n\nAnswer: {answer}"
+            }
+        ], model=API_FAST_MODEL
+    )
+    return content
+
+def send_request_to_endpoint(messages: list[Message], model=None):
     url = API_ENDPOINT
 
     payload = json.dumps({
-        "model": API_MODEL,
+        "model": model or API_MODEL,
         "messages": messages,
         "max_tokens": 3000,
         "temperature": 0.7

@@ -7,7 +7,7 @@ from django.utils import timezone
 import pyrogram
 from pyrogram.enums import ChatAction
 import logging
-from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_endpoint
+from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_endpoint, analyze_state_of_messaging
 from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
 from chatbot.models import Document, FAQ
 from celery import shared_task
@@ -81,21 +81,30 @@ def get_telegram_app():
             return
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
         bot_answer = get_llm_answer(message.text, USER_MESSAGE_SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
-        user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
+        
+        state = analyze_state_of_messaging()
+        question_answer_state = state if state in ["ANSWERED", "UNKNOWN", "IRRELEVANT"] else "ANSWERED"
+        
+
+        user_message = UserMessage.objects.create(
+            user_id=message.from_user.id,
+            chat_id=message.chat.id,
+            text=message.text
+        )
         BotMessage.objects.create(user_message=user_message, text=bot_answer)
         message.reply_text(bot_answer)
     print("Starting Telegram Bot...")
     return app
   
 def get_docs_and_faq_data(request):
-  docs = Document.objects.all()
-  faqs = FAQ.objects.all()
-  data = []
-  for doc in docs:
-    data.append(f"Category: {doc.category}, Sub Category: {doc.sub_category}, Solution: {doc.solution}")
-  for faq in faqs:
-    data.append(f"Category: {faq.category}, Question: {faq.question}, Answer: {faq.answer}")
-  return "\n".join(data)
+    docs = Document.objects.all()
+    faqs = FAQ.objects.all()
+    data = []
+    for doc in docs:
+      data.append(f"Category: {doc.category}, Sub Category: {doc.sub_category}, Solution: {doc.solution}")
+    for faq in faqs:
+      data.append(f"Category: {faq.category}, Question: {faq.question}, Answer: {faq.answer}")
+    return "\n".join(data)
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def send_alert(self, alert_id):
