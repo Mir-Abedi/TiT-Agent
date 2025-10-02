@@ -92,8 +92,6 @@ services:
       - .:/code
     ports:
       - "8000:8000"
-      - "443:443"
-      - "80:80"
     restart: unless-stopped
     networks:
       - backend
