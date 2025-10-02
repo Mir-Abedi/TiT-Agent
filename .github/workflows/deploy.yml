@@ -46,6 +46,9 @@ jobs:
             echo "Building and starting containers..."
             sudo docker compose up --build -d
 
+            # Waiting for services
+            sleep 10
+
             echo "Checking service status..."
             sudo docker compose ps
 
