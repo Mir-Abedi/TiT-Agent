@@ -1,37 +1,16 @@
+version: "3.9"
 services:
   db:
     image: postgres:15
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
+    container_name: my_postgres
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     ports:
       - "5432:5432"
-
-  web:
-    build: .
-    command: >
-      sh -c "source tit-env/bin/activate &&
-             pip install -r requirements.txt &&
-             python manage.py migrate &&
-             python manage.py start_telegram"
     volumes:
-      - .:/code
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    environment:
-      POSTGRES_DB: mydb
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
