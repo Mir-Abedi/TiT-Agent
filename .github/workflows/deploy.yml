@@ -29,6 +29,9 @@ jobs:
             export TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
             export TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
             export TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
+            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export OPENAI_ENDPOINT=${{ secrets.OPENAI_ENDPOINT }}
+            export OPENAPI_MODEL=${{ secrets.OPENAPI_MODEL }}
 
             echo "Stopping old containers..."
             sudo docker compose down
