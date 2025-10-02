@@ -89,7 +89,8 @@ def get_telegram_app():
         user_message = UserMessage.objects.create(
             user_id=message.from_user.id,
             chat_id=message.chat.id,
-            text=message.text
+            text=message.text,
+            state=question_answer_state
         )
         BotMessage.objects.create(user_message=user_message, text=bot_answer)
         message.reply_text(bot_answer)

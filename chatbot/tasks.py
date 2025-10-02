@@ -65,6 +65,7 @@ def analyze_state_of_messaging(question, answer):
 'UNKNOWN' if the model didnt have enough data.
 
 ONLY RETURN ONE OF 'IRRELEVANT', 'ANSWERED', 'UNKNOWN' with no other text.
+ONLY USE 'UNKNOWN' if the bot does not know the answer for user's question and a human agent must intervene.
 """
     content, is_okay = send_request_to_endpoint(
         [
