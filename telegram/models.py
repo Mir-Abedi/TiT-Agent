@@ -27,3 +27,10 @@ class UserMessage(TelegramMessage):
     class Meta:
         abstract = False
 
+class Alert(models.Model):
+    text = models.TextField()
+    def __str__(self):
+        return f"Alert for Users: {self.text}"
+    class Meta:
+        abstract = False
+

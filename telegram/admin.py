@@ -1,5 +1,5 @@
 from django.contrib import admin
-from telegram.models import UserMessage, BotMessage
+from telegram.models import UserMessage, BotMessage, Alert
 
 class UserMessageAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'chat_id', 'text', 'timestamp')
@@ -16,3 +16,10 @@ class BotMessageAdmin(admin.ModelAdmin):
     search_fields = ('user_message', 'text')
 
 admin.site.register(BotMessage, BotMessageAdmin)
+
+class AlertAdmin(admin.ModelAdmin):
+    list_display = ('text',)
+    fields = ('text',)
+    search_fields = ('text',)
+
+admin.site.register(Alert, AlertAdmin)
