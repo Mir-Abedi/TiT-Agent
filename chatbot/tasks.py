@@ -72,7 +72,7 @@ def send_request_to_endpoint(messages: list[Message]):
     if ans.get("prompt_filter_results", []):
         prompt_filter_results = ans["prompt_filter_results"][0]
         for i in prompt_filter_results.get("content_filter_results", {}):
-            if prompt_filter_results[i]["filtered"]:
+            if prompt_filter_results["content_filter_results"][i]["filtered"]:
                 is_okay = False
                 break
 

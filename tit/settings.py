@@ -141,3 +141,5 @@ TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_ENDPOINT = os.getenv("OPENAI_ENDPOINT")
 API_MODEL = os.getenv("API_MODEL", "GPT-4.1-Mini")
+
+
