@@ -29,11 +29,6 @@ jobs:
           script: |
             cd ${{ secrets.PROJECT_PATH }}
             
-            echo "Cleaning up disk space..."
-            sudo docker system prune -af --volumes || true
-            sudo docker builder prune -af || true
-            df -h
-            
             echo "Pulling latest master..."
             git fetch --all
             git pull origin master
@@ -41,7 +36,7 @@ jobs:
             git clean -fd
 
             echo "Stopping old containers..."
-            sudo docker compose down --remove-orphans || true
+            sudo docker compose down
 
             echo "Building and starting containers..."
             sudo docker compose up --build -d
