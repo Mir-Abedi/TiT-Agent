@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: my_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   db:
     image: postgres:15
     container_name: my_postgres
@@ -7,7 +20,7 @@ services:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,12 +38,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
       TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_API_ID: ${TELEGRAM_API_ID}
@@ -53,6 +70,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       telegram:
         condition: service_started
     environment:
@@ -61,6 +80,8 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     volumes:
       - .:/code
     ports:
@@ -79,9 +100,11 @@ services:
     command: >
       sh -c "source tit-env/bin/activate &&
              pip install -r requirements.txt &&
-             python manage.py celery worker --loglevel=info"
+             celery -A tit worker --loglevel=info"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       POSTGRES_DB: mydb
@@ -89,6 +112,38 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_HOST: db
       POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_ENDPOINT: ${OPENAI_ENDPOINT}
+      OPENAPI_MODEL: ${OPENAPI_MODEL}
+    volumes:
+      - .:/code
+    restart: unless-stopped
+
+  celery-beat:
+    build: .
+    command: >
+      sh -c "source tit-env/bin/activate &&
+             pip install -r requirements.txt &&
+             python manage.py migrate &&
+             celery -A tit beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
       TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_API_ID: ${TELEGRAM_API_ID}
@@ -101,3 +156,4 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:

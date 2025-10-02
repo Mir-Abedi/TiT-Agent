@@ -4,3 +4,6 @@ gunicorn
 pyrogram
 tgcrypto
 requests
+celery
+redis
+django-celery-beat

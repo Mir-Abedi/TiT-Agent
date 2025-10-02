@@ -1,68 +1,68 @@
-name: Deploy Django Docker App
+# name: Deploy Django Docker App
 
-on:
-  push:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd ${{ secrets.PROJECT_PATH }}
+#       - name: Deploy to server via SSH
+#         uses: appleboy/ssh-action@v0.1.7
+#         with:
+#           host: ${{ secrets.SERVER_IP }}
+#           username: ${{ secrets.SERVER_USER }}
+#           key: ${{ secrets.SERVER_SSH_KEY }}
+#           script: |
+#             cd ${{ secrets.PROJECT_PATH }}
             
-            echo "Cleaning up disk space..."
-            sudo docker system prune -af --volumes || true
-            sudo docker builder prune -af || true
-            df -h
+#             echo "Cleaning up disk space..."
+#             sudo docker system prune -af --volumes || true
+#             sudo docker builder prune -af || true
+#             df -h
             
-            echo "Pulling latest master..."
-            git fetch --all
-            git reset --hard origin/master
-            git clean -fd
+#             echo "Pulling latest master..."
+#             git fetch --all
+#             git reset --hard origin/master
+#             git clean -fd
 
-            echo "Creating .env file for environment variables..."
-            cat > .env << EOF
-            TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            OPENAI_ENDPOINT=${{ secrets.OPENAI_ENDPOINT }}
-            OPENAPI_MODEL=${{ secrets.OPENAPI_MODEL }}
-            EOF
+#             echo "Creating .env file for environment variables..."
+#             cat > .env << EOF
+#             TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
+#             TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+#             TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
+#             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+#             OPENAI_ENDPOINT=${{ secrets.OPENAI_ENDPOINT }}
+#             OPENAPI_MODEL=${{ secrets.OPENAPI_MODEL }}
+#             EOF
 
-            echo "Stopping old containers..."
-            sudo docker compose down --remove-orphans || true
+#             echo "Stopping old containers..."
+#             sudo docker compose down --remove-orphans || true
 
-            echo "Building and starting containers..."
-            sudo docker compose up --build -d
+#             echo "Building and starting containers..."
+#             sudo docker compose up --build -d
 
-            echo "Waiting for services to be ready..."
-            sleep 30
+#             echo "Waiting for services to be ready..."
+#             sleep 30
 
-            echo "Checking service status..."
-            sudo docker compose ps
+#             echo "Checking service status..."
+#             sudo docker compose ps
 
-            echo "Running migrations..."
-            sudo docker compose exec -T web python manage.py migrate --noinput || echo "Migration failed, continuing..."
+#             echo "Running migrations..."
+#             sudo docker compose exec -T web python manage.py migrate --noinput || echo "Migration failed, continuing..."
 
-            echo "Collecting static files..."
-            sudo docker compose exec -T web python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."
+#             echo "Collecting static files..."
+#             sudo docker compose exec -T web python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."
 
-            echo "Final service status check..."
-            sudo docker compose ps
-            sudo docker compose logs --tail=20 web
-            sudo docker compose logs --tail=20 telegram
+#             echo "Final service status check..."
+#             sudo docker compose ps
+#             sudo docker compose logs --tail=20 web
+#             sudo docker compose logs --tail=20 telegram
 
-            echo "Deployment completed!"
+#             echo "Deployment completed!"
