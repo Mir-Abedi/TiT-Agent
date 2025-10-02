@@ -310,7 +310,7 @@ def get_telegram_app():
 def send_alert(alert_id):
     alert = Alert.objects.get(id=alert_id)
     app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
-    
+    app.start()
     for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):
         app.send_message(user_id, alert.text)
     app.stop()
