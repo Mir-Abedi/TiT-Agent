@@ -101,7 +101,7 @@ services:
   celery:
     build: .
     command: >
-      sh -c "celery -A tit worker --loglevel=info"
+      sh -c "celery -A tit worker --loglevel=info --concurrency=1"
     depends_on:
       db:
         condition: service_healthy
