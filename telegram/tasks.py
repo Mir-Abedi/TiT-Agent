@@ -1,17 +1,20 @@
 import os
+from datetime import timedelta
+from django.utils import timezone
 
 import pyrogram
 from pyrogram.enums import ChatAction
 import logging
-from chatbot.tasks import get_llm_answer, get_history_messages
-from telegram.models import UserMessage, BotMessage, Alert
+from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_endpoint
+from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
 from chatbot.models import Document, FAQ
+from celery import shared_task
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH")
-
-SYSTEM_PROMPT = """You are a smart banking assistant. Your sole source of knowledge is the official Bank Knowledge Tree provided below.  
+AGENT_IDS = ["311701038"]
+USER_MESSAGE_SYSTEM_PROMPT = """You are a smart banking assistant available to bank users via a telegram bot. Your sole source of knowledge is the official Bank Knowledge Tree provided below.  
 The Knowledge Tree is structured as a list of categories, sub_categories, and solutions.  
 You must ONLY generate answers strictly based on the Knowledge Tree.  
 Do not invent, guess, or provide any information outside of the Knowledge Tree.
@@ -55,12 +58,15 @@ Answer in Persian.
 
 ⚠️ Remember: You must ALWAYS act strictly within these rules and base your answers ONLY on the Knowledge Tree.
 
+After answerint the question, ask the user if they have any other questions and suggest some other questions related to their problem.
 """
+
+ANALYZE_INCOMING_MESSAGES_SYSTEM_PROMPT = """You are a smart question and answers analyzer. You are given a list of questions sent to us from bank users. Analyze the questions and answers and find 5 most common questions. 
+Skip any questions irrelevant to banking services. Write the top questions seperately to be send to a human agent. Write in persian."""
 
 logger = logging.Logger("Telegram", 20)
 
 def get_telegram_app():
-    print(TELEGRAM_API_HASH, TELEGRAM_API_ID, TELEGRAM_BOT_TOKEN)
     app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     @app.on_message(pyrogram.filters.command("start"))
     def handle_notification(client, message):
@@ -68,7 +74,7 @@ def get_telegram_app():
     @app.on_message()
     def handle_query_message(client, message):
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
-        bot_answer = get_llm_answer(message.text, SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
+        bot_answer = get_llm_answer(message.text, USER_MESSAGE_SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
         user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
         BotMessage.objects.create(user_message=user_message, text=bot_answer)
         message.reply_text(bot_answer)
@@ -87,8 +93,31 @@ def get_docs_and_faq_data(request):
 
 def send_alert(alert_id):
     alert = Alert.objects.get(id=alert_id)
+    for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):
+        send_telegram_message(alert.text, user_id)
+  
+@shared_task
+def send_telegram_message(message, user_id):
     app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     app.start()
-    for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):
-        app.send_message(user_id, alert.text)
+    app.send_message(user_id, message)
     app.stop()
+
+@shared_task
+def analyze_incoming_messages(message):
+    min_timestamp = timezone.now() - timedelta(days=1)
+    questions = UserMessage.objects.filter(created_at__gte=min_timestamp)
+    questions_text = "\n".join([f"Question: {question.text}" for question in questions])
+    content, _ = send_request_to_endpoint([
+        {
+            "role": "system",
+            "content": ANALYZE_INCOMING_MESSAGES_SYSTEM_PROMPT
+        },
+        {
+            "role": "user",
+            "content": questions_text
+        }
+    ])
+    TelegramSummary.objects.create(text=content)
+    for agent_id in AGENT_IDS:
+        send_telegram_message.delay(content, agent_id)

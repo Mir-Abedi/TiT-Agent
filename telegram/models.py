@@ -41,3 +41,13 @@ class Alert(models.Model):
     class Meta:
         abstract = False
 
+class TelegramSummary(models.Model):
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    def __str__(self):
+        return f"TelegramSummary for Users: {self.text}"
+    
+    class Meta:
+        abstract = False
+        ordering = ['timestamp']
+

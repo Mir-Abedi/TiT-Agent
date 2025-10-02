@@ -1,6 +1,5 @@
 import os
 from celery import Celery
-from django.conf import settings
 
 # Set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'tit.settings')
@@ -16,7 +15,10 @@ app.autodiscover_tasks()
 
 # Celery Beat configuration
 app.conf.beat_schedule = {
-    
+    "analyze_incoming_messages": {
+        "task": "telegram.tasks.analyze_incoming_messages",
+        "schedule": 3600 * 24 # 24 hours
+    }
 }
 
 app.conf.timezone = 'UTC'
