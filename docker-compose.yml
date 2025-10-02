@@ -1,6 +1,5 @@
 networks:
-  - backend: {}
-
+  backend: {}
 
 services:
   redis:
