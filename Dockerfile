@@ -21,9 +21,5 @@ RUN pip install -r requirements.txt
 # Copy project
 COPY . /code/
 
-# Create virtual environment (for compatibility with existing commands)
-RUN python -m venv tit-env
-RUN tit-env/bin/pip install -r requirements.txt
-
 # Command to run the app
 CMD ["gunicorn", "tit.wsgi:application", "--bind", "0.0.0.0:8000"]

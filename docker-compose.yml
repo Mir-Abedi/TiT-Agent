@@ -35,9 +35,7 @@ services:
   telegram:
     build: .
     command: >
-      sh -c ". tit-env/bin/activate &&
-             pip install -r requirements.txt &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py start_telegram"
     depends_on:
       db:
@@ -69,9 +67,7 @@ services:
   web:
     build: .
     command: >
-      sh -c ". tit-env/bin/activate &&
-             pip install -r requirements.txt &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
     depends_on:
       db:
@@ -104,9 +100,7 @@ services:
   celery:
     build: .
     command: >
-      sh -c ". tit-env/bin/activate &&
-             pip install -r requirements.txt &&
-             celery -A tit worker --loglevel=info"
+      sh -c "celery -A tit worker --loglevel=info"
     depends_on:
       db:
         condition: service_healthy
@@ -135,9 +129,7 @@ services:
   celery-beat:
     build: .
     command: >
-      sh -c ". tit-env/bin/activate &&
-             pip install -r requirements.txt &&
-             python manage.py migrate &&
+      sh -c "python manage.py migrate &&
              celery -A tit beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     depends_on:
       db:
