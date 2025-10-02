@@ -91,6 +91,7 @@ def get_docs_and_faq_data(request):
     data.append(f"Category: {faq.category}, Question: {faq.question}, Answer: {faq.answer}")
   return "\n".join(data)
 
+@shared_task
 def send_alert(alert_id):
     alert = Alert.objects.get(id=alert_id)
     for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):

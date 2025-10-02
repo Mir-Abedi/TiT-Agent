@@ -18,8 +18,8 @@ class BotMessage(TelegramMessage):
         abstract = False
 
 class UserMessage(TelegramMessage):
-    user_id = models.IntegerField()
-    chat_id = models.IntegerField()
+    user_id = models.IntegerField(db_index=True)
+    chat_id = models.IntegerField(db_index=True)
     bot_message: BotMessage | None
 
     def __str__(self):
@@ -36,7 +36,7 @@ class Alert(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         from telegram.tasks import send_alert
-        send_alert(self.id)
+        send_alert.delay(self.id)
 
     class Meta:
         abstract = False
