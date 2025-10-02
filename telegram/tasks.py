@@ -16,7 +16,8 @@ from celery.exceptions import Retry
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH")
-AGENT_IDS = ["311701038"]
+AGENT_IDS = [311701038]
+SELF_USER_ID = 7165380042
 USER_MESSAGE_SYSTEM_PROMPT = """You are a smart banking assistant available to bank users via a telegram bot. Your sole source of knowledge is the official Bank Knowledge Tree provided below.  
 The Knowledge Tree is structured as a list of categories, sub_categories, and solutions.  
 You must ONLY generate answers strictly based on the Knowledge Tree.  
@@ -77,6 +78,8 @@ def get_telegram_app():
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     @app.on_message()
     def handle_query_message(client, message):
+        if message.from_user.id in SELF_USER_ID:
+            return
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
         bot_answer = get_llm_answer(message.text, USER_MESSAGE_SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
         user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
