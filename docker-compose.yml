@@ -1,9 +1,13 @@
+networks:
+  - backend: {}
+
+
 services:
   redis:
     image: redis:7-alpine
     container_name: my_redis
-    ports:
-      - "6379:6379"
+    networks:
+      - backend
     volumes:
       - redis_data:/data
     healthcheck:
@@ -14,13 +18,14 @@ services:
 
   db:
     image: postgres:15
+    hostname: postgres
     container_name: my_postgres
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-    ports:
-      - "5433:5432"
+    networks:
+      - backend
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -40,11 +45,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - backend
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -78,7 +85,7 @@ services:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -89,6 +96,8 @@ services:
       - "443:443"
       - "80:80"
     restart: unless-stopped
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
@@ -110,7 +119,7 @@ services:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -140,7 +149,7 @@ services:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_HOST: db
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
