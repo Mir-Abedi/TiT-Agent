@@ -47,22 +47,10 @@ def get_llm_answer(user, system="", previous_messages:list[PreviousMessage]=[]):
         }
     )
 
-    payload = json.dumps({
-        "model": API_MODEL,
-        "messages": model_messages,
-        "max_tokens": 2000,
-        "temperature": 0.7
-    })
-    headers = {
-        'authorization': f'apikey {API_KEY}',
-    }
-
-    response = requests.request("POST", API_ENDPOINT, headers=headers, data=payload)
-    print(response.text)
-
-    return response.json()["choices"][0]["message"]["content"]
-
-
+    ans, is_okay = send_request_to_endpoint(model_messages)
+    if not is_okay:
+        return "خطا در پردازش پیام"
+    return ans
 
 def send_request_to_endpoint(messages: list[Message]):
     url = API_ENDPOINT
