@@ -11,7 +11,6 @@ from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_
 from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
 from chatbot.models import Document, FAQ
 from celery import shared_task
-from celery.exceptions import Retry
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
@@ -78,7 +77,7 @@ def get_telegram_app():
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     @app.on_message()
     def handle_query_message(client, message):
-        if message.from_user.id in SELF_USER_ID:
+        if message.from_user.id == SELF_USER_ID:
             return
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
         bot_answer = get_llm_answer(message.text, USER_MESSAGE_SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
