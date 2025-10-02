@@ -58,7 +58,6 @@ jobs:
             sudo docker compose exec -T web python manage.py migrate --noinput || echo "Migration failed, continuing..."
 
             echo "Collecting static files..."
-            sudo docker compose exec -T web python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."
 
             echo "Final service status check..."
             sudo docker compose ps
