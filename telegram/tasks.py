@@ -82,9 +82,9 @@ def get_telegram_app():
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
         bot_answer = get_llm_answer(message.text, USER_MESSAGE_SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
         
-        state = analyze_state_of_messaging()
+        state = analyze_state_of_messaging(message.text, bot_answer)
         question_answer_state = state if state in ["ANSWERED", "UNKNOWN", "IRRELEVANT"] else "ANSWERED"
-        
+
 
         user_message = UserMessage.objects.create(
             user_id=message.from_user.id,
