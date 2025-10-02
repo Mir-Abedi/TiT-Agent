@@ -20,7 +20,7 @@ def get_history_messages(user_id, chat_id, max_num_user_messages=10):
     messages = UserMessage.objects.filter(timestamp__gte=one_hour_ago, user_id=user_id, chat_id=chat_id, bot_message__isnull=False)
     user_messages_count = messages.count()
     previous_messages = []
-    for message in messages[min(0, user_messages_count - max_num_user_messages):]:
+    for message in messages[max(0, user_messages_count - max_num_user_messages):]:
         previous_messages.extend(
             [
                 Message(
