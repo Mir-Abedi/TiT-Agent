@@ -68,7 +68,7 @@ def get_telegram_app():
     @app.on_message()
     def handle_query_message(client, message):
         client.send_chat_action(message.chat.id, ChatAction.TYPING)
-        bot_answer = get_llm_answer(message.text, SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.request)), get_history_messages(message.from_user.id, message.chat.id))
+        bot_answer = get_llm_answer(message.text, SYSTEM_PROMPT.format(DATA=get_docs_and_faq_data(request=message.text)), get_history_messages(message.from_user.id, message.chat.id))
         user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
         BotMessage.objects.create(user_message=user_message, text=bot_answer)
         message.reply_text(bot_answer)
