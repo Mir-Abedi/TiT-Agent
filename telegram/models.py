@@ -10,6 +10,8 @@ class TelegramMessage(models.Model):
 
 class BotMessage(TelegramMessage):
     user_message = models.OneToOneField("telegram.UserMessage", on_delete=models.CASCADE, related_name='bot_message')
+    rating = models.IntegerField(null=True, blank=True)
+
 
     def __str__(self):
         return f"BotMessage for Bot {self.user_message_id} at {self.timestamp}"
