@@ -6,10 +6,6 @@ from django.utils import timezone
 from datetime import timedelta
 from telegram.models import UserMessage
 
-class PreviousMessage(typing.TypedDict):
-    role: typing.Literal[0, 1, 2] # 0 for system prompt, 1 for user prompt, 2 for assistant
-    text: str
-
 
 class Message(typing.TypedDict):
     role: typing.Literal["assistant", "user", "system"]
@@ -19,54 +15,49 @@ API_KEY = settings.OPENAI_API_KEY
 API_ENDPOINT = settings.OPENAI_ENDPOINT
 API_MODEL = settings.API_MODEL
 
-def get_history_messages(user_id, chat_id, max_num_user_messages=4):
+def get_history_messages(user_id, chat_id, max_num_user_messages=10):
     one_hour_ago = timezone.now() - timedelta(hours=1)
     messages = UserMessage.objects.filter(timestamp__gte=one_hour_ago, user_id=user_id, chat_id=chat_id, bot_message__isnull=False)
+    user_messages_count = messages.count()
     previous_messages = []
-    for message in messages[-max_num_user_messages:]:
+    for message in messages[min(0, user_messages_count - max_num_user_messages):]:
         previous_messages.extend(
             [
-                {
-                    "role": "user",
-                    "content": message.text
-                }, 
-                {
-                    "role": "assistant",
-                    "content": message.bot_message.text
-                }
+                Message(
+                    role="user",
+                    content=message.text
+                ),
+                Message(
+                    role="assistant",
+                    content=message.bot_message.text
+                )
             ]
         )
     return previous_messages
 
-def get_llm_answer(user, system="", previous_messages:list[PreviousMessage]=[]):
+def get_llm_answer(user, system="", previous_messages:list[Message]=[]):
     # If system prompt is available skip previous_messages where role is system
     # Find from previous_messages if is not given
     if not system:
-        system_messages = [i for i in previous_messages if i.role == 0]
+        system_messages = [i for i in previous_messages if i.role == "system"]
         if system_messages:
             system = system_messages[-1].text
     # Filter messages where message is not system
-    filtered_messages = [i for i in previous_messages if i.role != 0][-4:]
+    filtered_messages = [i for i in previous_messages if i.role != "system"]
     model_messages = []
     if system:
         model_messages.append(
-            {
-                "role": "system",
-                "content": system
-            }
+            Message(
+                role="system",
+                content=system
+            )
         )
-    for i in filtered_messages:
-        model_messages.append(
-            {
-                "role": "assistant" if i.role == 2 else "user",
-                "content": i.text
-            }
-        )
+    model_messages.extend(filtered_messages)
     model_messages.append(
-        {
-            "role": "user",
-            "content": user
-        }
+        Message(
+            role="user",
+            content=user
+        )
     )
 
     ans, is_okay = send_request_to_endpoint(model_messages)
