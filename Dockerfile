@@ -5,10 +5,15 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set working directory
 WORKDIR /code
 
-# Install dependencies
+# Install Python dependencies
 COPY requirements.txt /code/
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
@@ -16,8 +21,9 @@ RUN pip install -r requirements.txt
 # Copy project
 COPY . /code/
 
-# Collect static files (optional)
-# RUN python manage.py collectstatic --noinput
+# Create virtual environment (for compatibility with existing commands)
+RUN python -m venv tit-env
+RUN tit-env/bin/pip install -r requirements.txt
 
 # Command to run the app
 CMD ["gunicorn", "tit.wsgi:application", "--bind", "0.0.0.0:8000"]
