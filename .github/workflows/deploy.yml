@@ -14,6 +14,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy to server via SSH
+        env:
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
+          OPENAPI_MODEL: ${{ secrets.OPENAPI_MODEL }}
         uses: appleboy/ssh-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -32,24 +39,11 @@ jobs:
             git reset --hard origin/master
             git clean -fd
 
-            echo "Creating .env file for environment variables..."
-            cat > .env << EOF
-            TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-            TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            OPENAI_ENDPOINT=${{ secrets.OPENAI_ENDPOINT }}
-            OPENAPI_MODEL=${{ secrets.OPENAPI_MODEL }}
-            EOF
-
             echo "Stopping old containers..."
             sudo docker compose down --remove-orphans || true
 
             echo "Building and starting containers..."
             sudo docker compose up --build -d
-
-            echo "Waiting for services to be ready..."
-            sleep 30
 
             echo "Checking service status..."
             sudo docker compose ps

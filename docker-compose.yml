@@ -43,8 +43,6 @@ services:
         condition: service_healthy
     networks:
       - backend
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
@@ -77,8 +75,6 @@ services:
         condition: service_healthy
       telegram:
         condition: service_started
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
@@ -115,8 +111,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
@@ -146,8 +140,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    env_file:
-      - .env
     environment:
       POSTGRES_DB: mydb
       POSTGRES_USER: myuser
