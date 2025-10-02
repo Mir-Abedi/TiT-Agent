@@ -1,4 +1,6 @@
 import os
+import uuid
+import time
 from datetime import timedelta
 from django.utils import timezone
 
@@ -9,6 +11,7 @@ from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_
 from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
 from chatbot.models import Document, FAQ
 from celery import shared_task
+from celery.exceptions import Retry
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
@@ -67,7 +70,8 @@ Skip any questions irrelevant to banking services. Write the top questions seper
 logger = logging.Logger("Telegram", 20)
 
 def get_telegram_app():
-    app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
+    session_name = f"bot_main_{uuid.uuid4().hex[:8]}"
+    app = pyrogram.Client(session_name, bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     @app.on_message(pyrogram.filters.command("start"))
     def handle_notification(client, message):
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
@@ -91,34 +95,70 @@ def get_docs_and_faq_data(request):
     data.append(f"Category: {faq.category}, Question: {faq.question}, Answer: {faq.answer}")
   return "\n".join(data)
 
-@shared_task
-def send_alert(alert_id):
-    alert = Alert.objects.get(id=alert_id)
-    for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):
-        send_telegram_message(alert.text, user_id)
+@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def send_alert(self, alert_id):
+    try:
+        alert = Alert.objects.get(id=alert_id)
+        for user_id in UserMessage.objects.all().distinct("user_id").values_list("user_id", flat=True):
+            send_telegram_message.delay(alert.text, user_id)
+        logger.info(f"Successfully queued alert {alert_id} for all users")
+    except Exception as e:
+        logger.error(f"Failed to send alert {alert_id}: {str(e)}")
+        raise self.retry(exc=e)
   
-@shared_task
-def send_telegram_message(message, user_id):
-    app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
-    app.start()
-    app.send_message(int(user_id), message)
-    app.stop()
+@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
+def send_telegram_message(self, message, user_id):
+    session_name = f"bot_{uuid.uuid4().hex[:8]}"
+    app = None
+    try:
+        app = pyrogram.Client(
+            session_name, 
+            bot_token=TELEGRAM_BOT_TOKEN, 
+            api_hash=TELEGRAM_API_HASH, 
+            api_id=TELEGRAM_API_ID
+        )
+        app.start()
+        app.send_message(int(user_id), message)
+        logger.info(f"Successfully sent message to user {user_id}")
+    except Exception as e:
+        logger.error(f"Failed to send message to user {user_id}: {str(e)}")
+        # Add a small delay before retry to reduce contention
+        time.sleep(1)
+        raise self.retry(exc=e)
+    finally:
+        if app:
+            try:
+                app.stop()
+            except Exception as e:
+                logger.error(f"Error stopping Pyrogram client: {str(e)}")
+            # Clean up session file
+            try:
+                session_file = f"{session_name}.session"
+                if os.path.exists(session_file):
+                    os.remove(session_file)
+            except Exception as e:
+                logger.error(f"Error cleaning up session file: {str(e)}")
 
-@shared_task
-def analyze_incoming_messages():
-    min_timestamp = timezone.now() - timedelta(days=1)
-    questions = UserMessage.objects.filter(created_at__gte=min_timestamp)
-    questions_text = "\n".join([f"Question: {question.text}" for question in questions])
-    content, _ = send_request_to_endpoint([
-        {
-            "role": "system",
-            "content": ANALYZE_INCOMING_MESSAGES_SYSTEM_PROMPT
-        },
-        {
-            "role": "user",
-            "content": questions_text
-        }
-    ])
-    TelegramSummary.objects.create(text=content)
-    for agent_id in AGENT_IDS:
-        send_telegram_message.delay(content, agent_id)
+@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
+def analyze_incoming_messages(self):
+    try:
+        min_timestamp = timezone.now() - timedelta(days=1)
+        questions = UserMessage.objects.filter(created_at__gte=min_timestamp)
+        questions_text = "\n".join([f"Question: {question.text}" for question in questions])
+        content, _ = send_request_to_endpoint([
+            {
+                "role": "system",
+                "content": ANALYZE_INCOMING_MESSAGES_SYSTEM_PROMPT
+            },
+            {
+                "role": "user",
+                "content": questions_text
+            }
+        ])
+        TelegramSummary.objects.create(text=content)
+        for agent_id in AGENT_IDS:
+            send_telegram_message.delay(content, agent_id)
+        logger.info("Successfully analyzed incoming messages and sent summary to agents")
+    except Exception as e:
+        logger.error(f"Failed to analyze incoming messages: {str(e)}")
+        raise self.retry(exc=e)
