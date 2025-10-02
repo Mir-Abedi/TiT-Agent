@@ -36,14 +36,6 @@ def get_history_messages(user_id, chat_id, max_num_user_messages=10):
     return previous_messages
 
 def get_llm_answer(user, system="", previous_messages:list[Message]=[]):
-    # If system prompt is available skip previous_messages where role is system
-    # Find from previous_messages if is not given
-    if not system:
-        system_messages = [i for i in previous_messages if i.role == "system"]
-        if system_messages:
-            system = system_messages[-1].text
-    # Filter messages where message is not system
-    filtered_messages = [i for i in previous_messages if i.role != "system"]
     model_messages = []
     if system:
         model_messages.append(
@@ -52,7 +44,7 @@ def get_llm_answer(user, system="", previous_messages:list[Message]=[]):
                 content=system
             )
         )
-    model_messages.extend(filtered_messages)
+    model_messages.extend(previous_messages)
     model_messages.append(
         Message(
             role="user",
