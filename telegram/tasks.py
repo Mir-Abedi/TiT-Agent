@@ -107,7 +107,7 @@ def send_alert(self, alert_id):
     except Exception as e:
         logger.error(f"Failed to send alert {alert_id}: {str(e)}")
         raise self.retry(exc=e)
-  
+
 @shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
 def send_telegram_message(self, message, user_id):
     session_name = f"bot_{uuid.uuid4().hex[:8]}"
@@ -145,7 +145,7 @@ def send_telegram_message(self, message, user_id):
 def analyze_incoming_messages(self):
     try:
         min_timestamp = timezone.now() - timedelta(days=1)
-        questions = UserMessage.objects.filter(created_at__gte=min_timestamp)
+        questions = UserMessage.objects.filter(timestamp__gte=min_timestamp)
         questions_text = "\n".join([f"Question: {question.text}" for question in questions])
         content, _ = send_request_to_endpoint([
             {
