@@ -1,6 +1,7 @@
 import os
 
 import pyrogram
+from pyrogram.enums import ChatAction
 import logging
 from chatbot.tasks import get_llm_answer, get_history_messages
 from telegram.models import UserMessage, BotMessage, Alert
@@ -298,7 +299,7 @@ def get_telegram_app():
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     @app.on_message()
     def handle_query_message(client, message):
-        client.send_chat_action(message.chat.id, "typing")
+        client.send_chat_action(message.chat.id, ChatAction.TYPING)
         bot_answer = get_llm_answer(message.text, SYSTEM_PROMPT, get_history_messages(message.from_user.id, message.chat.id))
         user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
         BotMessage.objects.create(user_message=user_message, text=bot_answer)
