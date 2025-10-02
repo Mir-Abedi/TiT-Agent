@@ -18,8 +18,8 @@ class BotMessage(TelegramMessage):
         abstract = False
 
 class UserMessage(TelegramMessage):
-    user_id = models.IntegerField(db_index=True)
-    chat_id = models.IntegerField(db_index=True)
+    user_id = models.BigIntegerField(db_index=True)
+    chat_id = models.BigIntegerField(db_index=True)
     bot_message: BotMessage | None
 
     def __str__(self):
