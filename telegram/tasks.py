@@ -18,6 +18,6 @@ def get_telegram_app():
     @app.on_message()
     def handle_query_message(client, message):
         print(message.text)
-        message.reply_text(get_llm_answer(message.text))
+        message.reply_text(get_llm_answer(message.text, "You are a bank assistant. You are helpful and friendly. You are answering in Persian."))
     print("Starting Telegram Bot...")
     return app
