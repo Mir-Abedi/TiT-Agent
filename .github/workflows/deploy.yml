@@ -28,6 +28,13 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd ${{ secrets.PROJECT_PATH }}
+
+            export TELEGRAM_API_HASH=${{ secrets.TELEGRAM_API_HASH }}
+            export TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            export TELEGRAM_API_ID=${{ secrets.TELEGRAM_API_ID }}
+            export OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            export OPENAI_ENDPOINT=${{ secrets.OPENAI_ENDPOINT }}
+            export OPENAPI_MODEL=${{ secrets.OPENAPI_MODEL }}
             
             echo "Pulling latest master..."
             git fetch --all
