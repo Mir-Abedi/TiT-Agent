@@ -8,6 +8,10 @@ class PreviousMessage(typing.TypedDict):
     text: str
 
 
+class Message(typing.TypedDict):
+    role: typing.Literal["assistant", "user", "system"]
+    content: str
+
 API_KEY = settings.OPENAI_API_KEY
 API_ENDPOINT = settings.OPENAI_ENDPOINT
 API_MODEL = settings.API_MODEL
@@ -59,3 +63,29 @@ def get_llm_answer(user, system="", previous_messages:list[PreviousMessage]=[]):
     return response.json()["choices"][0]["message"]["content"]
 
 
+
+def send_request_to_endpoint(messages: list[Message]):
+    url = API_ENDPOINT
+
+    payload = json.dumps({
+        "model": API_MODEL,
+        "messages": messages,
+        "max_tokens": 3000,
+        "temperature": 0.7
+    })
+    headers = {
+        'Authorization': 'apikey bf9c0ae0-3a2c-5eee-9cd9-cca7ae809836',
+        'Content-Type': 'application/json',
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+    ans = response.json()
+    is_okay = True
+    if ans.get("prompt_filter_results", []):
+        prompt_filter_results = ans["prompt_filter_results"][0]
+        for i in prompt_filter_results.get("content_filter_results", {}):
+            if prompt_filter_results[i]["filtered"]:
+                is_okay = False
+                break
+
+    return ans["choices"][0]["message"]["content"], is_okay
