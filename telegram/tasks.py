@@ -100,11 +100,11 @@ def send_alert(alert_id):
 def send_telegram_message(message, user_id):
     app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     app.start()
-    app.send_message(user_id, message)
+    app.send_message(int(user_id), message)
     app.stop()
 
 @shared_task
-def analyze_incoming_messages(message):
+def analyze_incoming_messages():
     min_timestamp = timezone.now() - timedelta(days=1)
     questions = UserMessage.objects.filter(created_at__gte=min_timestamp)
     questions_text = "\n".join([f"Question: {question.text}" for question in questions])
