@@ -2,10 +2,11 @@ from django.db import models
 
 class TelegramMessage(models.Model):
     text = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         abstract = True
+        ordering = ['timestamp']
 
 class BotMessage(TelegramMessage):
     user_message = models.OneToOneField("telegram.UserMessage", on_delete=models.CASCADE, related_name='bot_message')
@@ -31,6 +32,12 @@ class Alert(models.Model):
     text = models.TextField()
     def __str__(self):
         return f"Alert for Users: {self.text}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        from telegram.tasks import send_alert
+        send_alert(self.id)
+
     class Meta:
         abstract = False
 

@@ -2,6 +2,9 @@ import requests
 from django.conf import settings
 import typing
 import json
+from django.utils import timezone
+from datetime import timedelta
+from telegram.models import UserMessage
 
 class PreviousMessage(typing.TypedDict):
     role: typing.Literal[0, 1, 2] # 0 for system prompt, 1 for user prompt, 2 for assistant
@@ -15,6 +18,25 @@ class Message(typing.TypedDict):
 API_KEY = settings.OPENAI_API_KEY
 API_ENDPOINT = settings.OPENAI_ENDPOINT
 API_MODEL = settings.API_MODEL
+
+def get_history_messages(user_id, chat_id, max_num_user_messages=4):
+    one_hour_ago = timezone.now() - timedelta(hours=1)
+    messages = UserMessage.objects.filter(timestamp__gte=one_hour_ago, user_id=user_id, chat_id=chat_id, bot_message__isnull=False)
+    previous_messages = []
+    for message in messages[-max_num_user_messages:]:
+        previous_messages.extend(
+            [
+                {
+                    "role": "user",
+                    "content": message.text
+                }, 
+                {
+                    "role": "assistant",
+                    "content": message.bot_message.text
+                }
+            ]
+        )
+    return previous_messages
 
 def get_llm_answer(user, system="", previous_messages:list[PreviousMessage]=[]):
     # If system prompt is available skip previous_messages where role is system
