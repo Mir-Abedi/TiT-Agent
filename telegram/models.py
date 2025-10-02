@@ -11,7 +11,7 @@ class BotMessage(TelegramMessage):
     user_message = models.OneToOneField("telegram.UserMessage", on_delete=models.CASCADE, related_name='bot_message')
 
     def __str__(self):
-        return f"BotMessage for Bot {self.user_message_id} at {self.created_at}"
+        return f"BotMessage for Bot {self.user_message_id} at {self.timestamp}"
     
     class Meta:
         abstract = False
@@ -22,7 +22,7 @@ class UserMessage(TelegramMessage):
     bot_message: BotMessage | None
 
     def __str__(self):
-        return f"UserMessage for User {self.user_id} at {self.created_at}"
+        return f"UserMessage for User {self.user_id} at {self.timestamp}"
     
     class Meta:
         abstract = False
