@@ -2,6 +2,7 @@ import os
 import pyrogram
 import logging
 from chatbot.tasks import get_llm_answer
+from telegram.models import UserMessage, BotMessage
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_API_ID = os.getenv("TELEGRAM_API_ID")
@@ -17,7 +18,9 @@ def get_telegram_app():
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
     @app.on_message()
     def handle_query_message(client, message):
-        print(message.text)
-        message.reply_text(get_llm_answer(message.text, "You are a bank assistant. You are helpful and friendly. You are answering in Persian."))
+        bot_answer = get_llm_answer(message.text, "You are a bank assistant. You are helpful and friendly. You are answering in Persian. In case of not being able to answer, you should say that you are not able to answer and the questinos must be about banking.")
+        user_message = UserMessage.objects.create(user_id=message.from_user.id, chat_id=message.chat.id, text=message.text)
+        BotMessage.objects.create(user_message=user_message, text=bot_answer)
+        message.reply_text(bot_answer)
     print("Starting Telegram Bot...")
     return app
