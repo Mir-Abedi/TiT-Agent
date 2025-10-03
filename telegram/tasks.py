@@ -73,8 +73,7 @@ Skip any questions irrelevant to banking services. Write the top questions seper
 logger = logging.Logger("Telegram", 20)
 
 def get_telegram_app():
-    session_name = f"bot_main_{uuid.uuid4().hex[:8]}"
-    app = pyrogram.Client(session_name, bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
+    app = pyrogram.Client("bot", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     @app.on_callback_query(pyrogram.filters.regex(r"^rate&"))
     def handle_callback_query(client, callback_query):
         _, id_str, rate_str = callback_query.data.split("&")
@@ -115,11 +114,13 @@ def get_telegram_app():
     return app
 
 def infinite_send_loop():
-    session_name = f"bot_main_{uuid.uuid4().hex[:8]}"
-    app = pyrogram.Client(session_name, bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
+    app = pyrogram.Client("event", bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
     app.start()
     while True:
         request = SendTelegramMessageRequest.objects.first()
+        if not request:
+            time.sleep(0.5)
+            continue
         text = request.text
         user_id = request.user_id
         request.delete()
