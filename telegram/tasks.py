@@ -1,6 +1,5 @@
 import os
-from pydoc import text
-import uuid
+import random
 import time
 from datetime import timedelta
 from django.utils import timezone
@@ -102,7 +101,7 @@ def get_telegram_app():
             state=question_answer_state
         )
         bot_message = BotMessage.objects.create(user_message=user_message, text=bot_answer)
-        if question_answer_state == "ANSWERED":
+        if question_answer_state == "ANSWERED" and random.random() < 0.4:
             keyboard = pyrogram.types.InlineKeyboardMarkup([
                 [pyrogram.types.InlineKeyboardButton("لطفا به جواب ربات امتیاز دهید.", callback_data="random")],
                 [
@@ -110,6 +109,9 @@ def get_telegram_app():
                 ]
             ])
         message.reply_text(bot_answer, reply_markup=keyboard)
+        if question_answer_state == "UNKNOWN":
+            agent_id = random.choice(AGENT_IDS)
+            send_telegram_message.delay(f"کاربر {message.from_user.first_name} با یوزرنیم @{message.from_user.username} و آیدی {message.from_user.id} نیاز به کمک دارد.\nسوال: {message.text}", agent_id)
     print("Starting Telegram Bot...")
     return app
 
@@ -156,7 +158,9 @@ def send_telegram_message(self, message, user_id):
 def analyze_incoming_messages(self):
     try:
         min_timestamp = timezone.now() - timedelta(days=1)
-        questions = UserMessage.objects.filter(timestamp__gte=min_timestamp)
+        questions = UserMessage.objects.filter(timestamp__gte=min_timestamp, state="UNKNOWN")
+        if not questions.exists():
+            return
         questions_text = "\n".join([f"Question: {question.text}" for question in questions])
         content, _ = send_request_to_endpoint([
             {
