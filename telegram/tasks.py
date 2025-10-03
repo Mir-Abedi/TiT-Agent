@@ -104,7 +104,7 @@ def get_telegram_app():
         bot_message = BotMessage.objects.create(user_message=user_message, text=bot_answer)
         if question_answer_state == "ANSWERED":
             keyboard = pyrogram.types.InlineKeyboardMarkup([
-                [pyrogram.types.InlineKeyboardButton("لطفا به جواب ربات امتیاز دهید.", callback_data="")],
+                [pyrogram.types.InlineKeyboardButton("لطفا به جواب ربات امتیاز دهید.", callback_data="random")],
                 [
                     pyrogram.types.InlineKeyboardButton(f"{i}", callback_data=f"rate&{bot_message.id}&{i}") for i in range(1, 6)
                 ]
