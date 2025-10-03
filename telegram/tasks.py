@@ -7,6 +7,8 @@ from django.utils import timezone
 import pyrogram
 from pyrogram.enums import ChatAction
 import logging
+
+from pyrogram.raw.base import reply_markup
 from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_endpoint, analyze_state_of_messaging
 from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
 from chatbot.models import Document, FAQ
@@ -72,6 +74,14 @@ logger = logging.Logger("Telegram", 20)
 def get_telegram_app():
     session_name = f"bot_main_{uuid.uuid4().hex[:8]}"
     app = pyrogram.Client(session_name, bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
+    @app.on_callback_query(pyrogram.filters.regex(r"^rate&"))
+    def handle_callback_query(client, callback_query):
+        _, id_str, rate_str = callback_query.data.split("&")
+        id, rate = int(id_str), int(rate_str)
+        set_message_rate.delay(id, rate)
+        callback_query.edit_message_text(BotMessage.objects.get(id=id).text, reply_markup=None)
+        callback_query.answer("با تشکر از امتیاز شما")
+    
     @app.on_message(pyrogram.filters.command("start"))
     def handle_notification(client, message):
         message.reply_text("سلام من دستیار هوشمند بانک گردشگری هستم. چطور می‌تونم کمکتون کنم؟")
@@ -84,16 +94,22 @@ def get_telegram_app():
         
         state = analyze_state_of_messaging(message.text, bot_answer)
         question_answer_state = state if state in ["ANSWERED", "UNKNOWN", "IRRELEVANT"] else "ANSWERED"
-
-
+        keyboard = None
         user_message = UserMessage.objects.create(
             user_id=message.from_user.id,
             chat_id=message.chat.id,
             text=message.text,
             state=question_answer_state
         )
-        BotMessage.objects.create(user_message=user_message, text=bot_answer)
-        message.reply_text(bot_answer)
+        bot_message = BotMessage.objects.create(user_message=user_message, text=bot_answer)
+        if question_answer_state == "ANSWERED":
+            keyboard = pyrogram.types.InlineKeyboardMarkup([
+                [pyrogram.types.InlineKeyboardButton("لطفا به جواب ربات امتیاز دهید.", callback_data="")],
+                [
+                    pyrogram.types.InlineKeyboardButton(f"{i}", callback_data=f"rate&{bot_message.id}&{i}") for i in range(1, 6)
+                ]
+            ])
+        message.reply_text(bot_answer, reply_markup=keyboard)
     print("Starting Telegram Bot...")
     return app
   
@@ -174,3 +190,9 @@ def analyze_incoming_messages(self):
     except Exception as e:
         logger.error(f"Failed to analyze incoming messages: {str(e)}")
         raise self.retry(exc=e)
+
+@shared_task
+def set_message_rate(message_id, rate):
+    message = BotMessage.objects.get(id=message_id)
+    message.rating = rate
+    message.save()
