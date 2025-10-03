@@ -1,4 +1,5 @@
 import os
+from pydoc import text
 import uuid
 import time
 from datetime import timedelta
@@ -10,7 +11,7 @@ import logging
 
 from pyrogram.raw.base import reply_markup
 from chatbot.tasks import get_llm_answer, get_history_messages, send_request_to_endpoint, analyze_state_of_messaging
-from telegram.models import UserMessage, BotMessage, Alert, TelegramSummary
+from telegram.models import TelegramMessage, UserMessage, BotMessage, Alert, TelegramSummary, SendTelegramMessageRequest
 from chatbot.models import Document, FAQ
 from celery import shared_task
 
@@ -112,7 +113,19 @@ def get_telegram_app():
         message.reply_text(bot_answer, reply_markup=keyboard)
     print("Starting Telegram Bot...")
     return app
-  
+
+def infinite_send_loop():
+    session_name = f"bot_main_{uuid.uuid4().hex[:8]}"
+    app = pyrogram.Client(session_name, bot_token=TELEGRAM_BOT_TOKEN, api_hash=TELEGRAM_API_HASH, api_id=TELEGRAM_API_ID)
+    app.start()
+    while True:
+        request = SendTelegramMessageRequest.objects.first()
+        text = request.text
+        user_id = request.user_id
+        request.delete()
+        app.send_message(user_id, text)
+        time.sleep(0.5)
+
 def get_docs_and_faq_data(request):
     docs = Document.objects.all()
     faqs = FAQ.objects.all()
@@ -136,36 +149,7 @@ def send_alert(self, alert_id):
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 5})
 def send_telegram_message(self, message, user_id):
-    session_name = f"bot_{uuid.uuid4().hex[:8]}"
-    app = None
-    try:
-        app = pyrogram.Client(
-            session_name, 
-            bot_token=TELEGRAM_BOT_TOKEN, 
-            api_hash=TELEGRAM_API_HASH, 
-            api_id=TELEGRAM_API_ID
-        )
-        app.start()
-        app.send_message(int(user_id), message)
-        logger.info(f"Successfully sent message to user {user_id}")
-    except Exception as e:
-        logger.error(f"Failed to send message to user {user_id}: {str(e)}")
-        # Add a small delay before retry to reduce contention
-        time.sleep(1)
-        raise self.retry(exc=e)
-    finally:
-        if app:
-            try:
-                app.stop()
-            except Exception as e:
-                logger.error(f"Error stopping Pyrogram client: {str(e)}")
-            # Clean up session file
-            try:
-                session_file = f"{session_name}.session"
-                if os.path.exists(session_file):
-                    os.remove(session_file)
-            except Exception as e:
-                logger.error(f"Error cleaning up session file: {str(e)}")
+    SendTelegramMessageRequest.objects.create(text=message, user_id=user_id)
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3, 'countdown': 10})
 def analyze_incoming_messages(self):

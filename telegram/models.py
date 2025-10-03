@@ -54,3 +54,7 @@ class TelegramSummary(models.Model):
         abstract = False
         ordering = ['timestamp']
 
+class SendTelegramMessageRequest(models.Model):
+    text = models.TextField()
+    user_id = models.BigIntegerField()
+

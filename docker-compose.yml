@@ -60,6 +60,34 @@ services:
     volumes:
       - .:/code
     restart: unless-stopped
+  telegram-event-loop:
+    build: .
+    command: >
+      sh -c "python manage.py start_event_loop"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: mydb
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_ENDPOINT: ${OPENAI_ENDPOINT}
+      OPENAPI_MODEL: ${OPENAPI_MODEL}
+    volumes:
+      - .:/code
+    restart: unless-stopped
   web:
     build: .
     command: >
