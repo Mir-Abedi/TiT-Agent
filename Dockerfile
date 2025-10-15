@@ -22,4 +22,4 @@ RUN pip install -r requirements.txt
 COPY . /code/
 
 # Command to run the app
-CMD ["gunicorn", "tit.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "tit.wsgi:application", "--bind", "0.0.0.0:8001"]
