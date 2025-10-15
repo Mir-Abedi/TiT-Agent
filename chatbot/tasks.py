@@ -61,7 +61,7 @@ def get_llm_answer(user, system="", previous_messages:list[Message]=[]):
 def analyze_state_of_messaging(question, answer):
     system = """You are an expert in analyzing conversations. Analyze the conversation and ONLY return one of these options below:
 'IRRELEVANT' if the question was irrelevant.
-'ANSWERED' if the question was a valid banking question and it is fully answered.
+'ANSWERED' if the question was a valid hotel booking question and it is fully answered.
 'UNKNOWN' if the model didnt have enough data.
 
 ONLY RETURN ONE OF 'IRRELEVANT', 'ANSWERED', 'UNKNOWN' with no other text.
