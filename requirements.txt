@@ -7,3 +7,4 @@ requests
 celery
 redis
 django-celery-beat
+whitenoise

@@ -91,7 +91,8 @@ services:
   web:
     build: .
     command: >
-      sh -c "gunicorn tit.wsgi:application --bind 0.0.0.0:8001"
+      sh -c "python manage.py collectstatic --noinput &&
+      gunicorn tit.wsgi:application --bind 0.0.0.0:8001"
     depends_on:
       db:
         condition: service_healthy
